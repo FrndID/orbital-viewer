@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earth-Moon Orbital Dynamics Simulator v1.0.0</title>
+    <title>Earth-Moon Orbital Dynamics Simulator v1.1.0</title>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script type="importmap">
         {
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "@tweenjs/tween.js": "https://unpkg.com/@tweenjs/tween.js@23.1.1/dist/tween.esm.js"
             }
         }
     </script>
@@ -31,12 +32,19 @@
         </div>
         <div class="btn-group">
             <button id="btn-update">Update Orbit</button>
-            <button id="btn-view-top">Top-Down View</button>
+            <button id="btn-view-top">Top-Down</button>
             <button id="btn-view-iso">Iso View</button>
         </div>
         
         <hr>
-        
+        <h3>Focus Control</h3>
+        <div class="btn-group">
+            <button id="focus-earth">Earth</button>
+            <button id="focus-sat">Satellite</button>
+            <button id="focus-moon">Moon</button>
+        </div>
+
+        <hr>
         <h3>Telemetry Data</h3>
         <div id="telemetry-output">
             <p>Zone: <span id="data-zone">-</span></p>
