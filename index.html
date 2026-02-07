@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earth-Moon Orbital Dynamics Simulator v1.1.0</title>
+    <title>Orbital Simulator v1.2.0 - High Contrast Edition</title>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script type="importmap">
         {
@@ -18,24 +18,21 @@
 </head>
 <body>
     <div id="simulation-container"></div>
-    
     <div id="ui-panel">
         <h3>Orbital Control</h3>
         <div class="telemetry-group">
-            <label>Target Altitude (km):</label>
-            <input type="number" id="altitude-input" value="35786" step="100">
+            <label>Altitude (km):</label>
+            <input type="number" id="altitude-input" value="35786">
         </div>
         <div class="telemetry-group">
-            <label>Time Scale (x Realtime):</label>
+            <label>Time Scale:</label>
             <input type="range" id="time-scale" min="1" max="1000" value="100">
             <span id="time-val">100x</span>
         </div>
         <div class="btn-group">
-            <button id="btn-update">Update Orbit</button>
-            <button id="btn-view-top">Top-Down</button>
-            <button id="btn-view-iso">Iso View</button>
+            <button id="btn-update">Update</button>
+            <button id="btn-view-top">Top View</button>
         </div>
-        
         <hr>
         <h3>Focus Control</h3>
         <div class="btn-group">
@@ -43,16 +40,12 @@
             <button id="focus-sat">Satellite</button>
             <button id="focus-moon">Moon</button>
         </div>
-
         <hr>
-        <h3>Telemetry Data</h3>
         <div id="telemetry-output">
             <p>Zone: <span id="data-zone">-</span></p>
-            <p>Velocity: <span id="data-velocity">0</span> km/s</p>
-            <p>Period: <span id="data-period">0</span> min</p>
+            <p>V: <span id="data-velocity">0</span> km/s</p>
         </div>
     </div>
-
     <script type="module" src="main.js"></script>
 </body>
 </html>
