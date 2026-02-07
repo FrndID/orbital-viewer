@@ -2,72 +2,71 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import TWEEN from '@tweenjs/tween.js';
 
-// --- KONSTANTA FISIKA ---
+// --- KONSTANTA ---
 const R_EARTH_KM = 6371; 
 const GM = 398600; 
 const MOON_DIST_KM = 384400;
-const MOON_RADIUS_KM = 1737;
 const toUnits = (km) => km / R_EARTH_KM;
 
-// --- SETUP SCENE ---
+// --- INITIALIZE RENDERER (WEBGL 1 FOR WIN 7) ---
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x00050a);
+scene.background = new THREE.Color(0x000000); // Black for high contrast
 
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
-camera.position.set(15, 12, 15);
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 3000);
+camera.position.set(20, 15, 20);
 
-// --- PERBAIKAN WEBGL COMPATIBILITY ---
-let renderer;
-try {
-    // Memaksa penggunaan WebGL 1 (Legacy) untuk kompatibilitas Windows 7
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    
-    if (!context) {
-        throw new Error("Browser/GPU tidak mendukung WebGL sama sekali.");
-    }
+const renderer = new THREE.WebGL1Renderer({ antialias: false }); // Disable for performance
+renderer.setSize(window.innerWidth, window.innerHeight);
 
-    renderer = new THREE.WebGLRenderer({ 
-        canvas: canvas,
-        antialias: false, // Matikan antialias untuk performa di GPU tua
-        precision: "mediump", // Gunakan presisi medium agar lebih ringan
-        powerPreference: "high-performance"
-    });
-} catch (e) {
-    alert("Error: Perangkat Anda tidak mendukung WebGL. Harap perbarui driver GPU Anda.");
-    console.error(e);
-}
+// --- GRID SISTEM (REFERENSI SPASIAL) ---
+// Grid utama pada bidang ekuator
+const grid = new THREE.GridHelper(200, 50, 0x444444, 0x222222);
+scene.add(grid);
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-
-// --- OPTIMASI GEOMETRY UNTUK DEVICE LAMA ---
-// Gunakan jumlah segmen yang lebih sedikit agar beban GPU berkurang
-const earthGeo = new THREE.SphereGeometry(toUnits(R_EARTH_KM), 32, 32); 
-const earthMat = new THREE.MeshPhongMaterial({ color: 0x2233ff, emissive: 0x000011 });
-const earth = new THREE.Mesh(earthGeo, earthMat);
+// --- OBJEK ---
+// Bumi dengan Wireframe kontras tinggi
+const earth = new THREE.Mesh(
+    new THREE.SphereGeometry(toUnits(R_EARTH_KM), 32, 32),
+    new THREE.MeshBasicMaterial({ color: 0x0000ff, wireframe: true }) 
+);
 scene.add(earth);
 
-const moonGeo = new THREE.SphereGeometry(toUnits(MOON_RADIUS_KM), 16, 16);
-const moonMat = new THREE.MeshPhongMaterial({ color: 0xaaaaaa });
-const moon = new THREE.Mesh(moonGeo, moonMat);
-moon.position.set(toUnits(MOON_DIST_KM), 0, 0);
-scene.add(moon);
-
+// Satelit (Titik Kuning Terang)
 const satellite = new THREE.Mesh(
-    new THREE.SphereGeometry(0.15, 8, 8),
+    new THREE.SphereGeometry(0.2, 8, 8),
     new THREE.MeshBasicMaterial({ color: 0xffff00 })
 );
 scene.add(satellite);
 
-// Light
-const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
-sunLight.position.set(100, 50, 100);
-scene.add(sunLight, new THREE.AmbientLight(0x404040, 0.8));
+// Bulan (Titik Abu-abu)
+const moon = new THREE.Mesh(
+    new THREE.SphereGeometry(toUnits(1737), 16, 16),
+    new THREE.MeshBasicMaterial({ color: 0xaaaaaa, wireframe: true })
+);
+moon.position.set(toUnits(MOON_DIST_KM), 0, 0);
+scene.add(moon);
 
-// --- LOGIKA FOKUS & TELEMETRY ---
+// --- GARIS ORBIT (KONTRAST TINGGI) ---
+function createOrbitLine(altitude, color) {
+    const radius = toUnits(R_EARTH_KM + altitude);
+    const curve = new THREE.EllipseCurve(0, 0, radius, radius);
+    const points = curve.getPoints(128);
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const material = new THREE.LineBasicMaterial({ color: color, linewidth: 2 });
+    const orbitLine = new THREE.Line(geometry, material);
+    orbitLine.rotation.x = Math.PI / 2;
+    scene.add(orbitLine);
+}
+
+// Tambahkan Garis Orbit Standar
+createOrbitLine(2000, 0x00ff00);  // LEO (Hijau)
+createOrbitLine(35786, 0x00ffff); // GEO (Cyan)
+
+// --- LOGIKA KONTROL ---
 let focusedObject = null;
 let satState = { altitude: 35786, angle: 0, omega: 0 };
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
 
 function setFocus(target) {
     focusedObject = target;
@@ -77,39 +76,40 @@ function setFocus(target) {
 
     new TWEEN.Tween(controls.target)
         .to({ x: targetPos.x, y: targetPos.y, z: targetPos.z }, 800)
-        .easing(TWEEN.Easing.Quadratic.Out)
         .start();
 }
 
-function updateTelemetry(altitude) {
+function updatePhysics(altitude) {
     const r = R_EARTH_KM + altitude;
-    const v = Math.sqrt(GM / r);
-    satState.omega = v / r;
-    $('#data-velocity').text(v.toFixed(3));
-    $('#data-period').text(((2 * Math.PI * Math.sqrt(Math.pow(r, 3) / GM)) / 60).toFixed(1));
+    satState.omega = Math.sqrt(GM / r) / r;
+    $('#data-velocity').text(Math.sqrt(GM / r).toFixed(2));
 }
 
-// --- INITIALIZATION ---
+// --- DOM READY ---
 $(document).ready(function() {
-    const $container = $('#simulation-container');
-    renderer.setSize($container.width(), $container.height());
-    $container.append(renderer.domElement);
-
-    updateTelemetry(satState.altitude);
+    $('#simulation-container').append(renderer.domElement);
+    updatePhysics(satState.altitude);
 
     $('#btn-update').click(() => {
         satState.altitude = parseFloat($('#altitude-input').val()) || 0;
-        updateTelemetry(satState.altitude);
+        updatePhysics(satState.altitude);
     });
 
     $('#focus-earth').click(() => setFocus(null));
     $('#focus-sat').click(() => setFocus('satellite'));
     $('#focus-moon').click(() => setFocus('moon'));
+    
+    $('#btn-view-top').click(() => {
+        setFocus(null);
+        camera.position.set(0, 150, 0);
+    });
 
-    $('#btn-view-top').click(() => { setFocus(null); camera.position.set(0, 100, 0); });
-    $('#time-scale').on('input', function() { $('#time-val').text($(this).val() + 'x'); });
+    $('#time-scale').on('input', function() {
+        $('#time-val').text($(this).val() + 'x');
+    });
 });
 
+// --- ANIMATION ---
 const clock = new THREE.Clock();
 function animate() {
     requestAnimationFrame(animate);
@@ -117,10 +117,12 @@ function animate() {
     const tScale = parseFloat($('#time-scale').val()) || 1;
     TWEEN.update();
 
+    // Orbit Satelit
     satState.angle += satState.omega * delta * tScale;
-    const rUnits = toUnits(R_EARTH_KM + satState.altitude);
-    satellite.position.set(Math.cos(satState.angle) * rUnits, 0, Math.sin(satState.angle) * rUnits);
+    const r = toUnits(R_EARTH_KM + satState.altitude);
+    satellite.position.set(Math.cos(satState.angle) * r, 0, Math.sin(satState.angle) * r);
 
+    // Camera Tracking
     if (focusedObject === 'satellite') controls.target.copy(satellite.position);
     else if (focusedObject === 'moon') controls.target.copy(moon.position);
 
@@ -128,3 +130,9 @@ function animate() {
     renderer.render(scene, camera);
 }
 animate();
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
