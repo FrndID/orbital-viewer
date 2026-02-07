@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earth-Moon Orbital Dynamics Simulator v1.0.0</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="simulation-container"></div>
+    
+    <div id="ui-panel">
+        <h3>Orbital Control</h3>
+        <div class="telemetry-group">
+            <label>Target Altitude (km):</label>
+            <input type="number" id="altitude-input" value="35786" step="100">
+        </div>
+        <div class="telemetry-group">
+            <label>Time Scale (x Realtime):</label>
+            <input type="range" id="time-scale" min="1" max="1000" value="100">
+            <span id="time-val">100x</span>
+        </div>
+        <div class="btn-group">
+            <button id="btn-update">Update Orbit</button>
+            <button id="btn-view-top">Top-Down View</button>
+            <button id="btn-view-iso">Iso View</button>
+        </div>
+        
+        <hr>
+        
+        <h3>Telemetry Data</h3>
+        <div id="telemetry-output">
+            <p>Zone: <span id="data-zone">-</span></p>
+            <p>Velocity: <span id="data-velocity">0</span> km/s</p>
+            <p>Period: <span id="data-period">0</span> min</p>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
